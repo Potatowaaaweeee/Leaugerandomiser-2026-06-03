@@ -1,0 +1,145 @@
+import requests
+import random
+import tkinter as tk
+# get latest patch
+versions = requests.get(
+    "https://ddragon.leagueoflegends.com/api/versions.json"
+).json()
+
+latest = versions[0]
+
+# use it
+url = f"https://ddragon.leagueoflegends.com/cdn/{latest}/data/en_US/champion.json"
+data = requests.get(url).json()
+
+names = [champ["name"] for champ in data["data"].values()]
+#Test if names work: 
+# print(names)
+#List of all runes, and the runes in each tree.
+
+rune_map = {
+    "Precision": {
+        "main": ("Conqueror", "Lethal Tempo", "Fleet Footwork", "Press the Attack"),
+        "sub1": ("Absorb Life", "Triumph", "Presence of Mind",),
+        "sub2": ("Legend: Alacrity", "Legend: Haste", "Legend: Bloodline"),
+        "sub3": ("Last Stand", "Coup de Grace", "Cut Down"),
+    },
+    "Domination": {
+        "main": ("Electrocute", "Dark Harvest", "Hail of Blades"),
+        "sub1": ("Cheap Shot", "Taste of Blood", "Sudden Impact"),
+        "sub2": ("Sixth Sense", "Grisly Mementoes", "Deep Ward"),
+        "sub3": ("Treassure Hunter", "Relentless Hunter", "Ultimate Hunter"),
+    },
+    "Sorcery": {
+        "main": ("Summon Aery", "Arcane Comet", "Stormraider's Surge", "Deathfire Touch"),
+        "sub1": ("Manaflow Band", "Axiom Arcanist", "Nimbus Cloak",),
+        "sub2": ("Transcendence", "Celerity", "Absolute Focus"),
+        "sub3": ("Waterwalking", "Scorch", "Gathering Storm"),
+    },
+    "Inspiration": {
+        "main": ("Glacial Augment","Unsealed Spellbook", "First Strike"),
+        "sub1": ("Magical Footwear", "Hextech Flashtraption", "Cash Back",),
+        "sub2": ("Triple Tonic","Time Warp Tonic", "Biscuit Delivery"),
+        "sub3": ("Approach Velocity", "Cosmic Insight", "Jack of All Trades"),
+    },
+    "Resolve": {
+        "main": ("Grasp of the Undying", "Aftershock","Guardian"),
+        "sub1": ("Bone Plating", "Second Wind", "Conditioning",),
+        "sub2": ("Demolish", "Font of Life", "Shield Bash"),
+        "sub3": ("Overgrowth", "Revitalize", "Unflinching"),
+    },
+}
+
+#Class parent for randomisers, to make it easier to make more randomisers in the future, and to make it easier to change the randomiser if needed.
+
+class randomiserparent:
+    def __init__(self, randomiser):
+        self.randomiser = randomiser
+
+    def randomise(self):  
+        return random.choice(self.randomiser.names)
+
+
+#Randomiser for champions, uses the parent class to make it easier to make more randomisers in the future, and to make it easier to change the randomiser if needed.    
+class championrandomiser(randomiserparent):
+    def __init__(self):
+        super().__init__(randomiser=self)
+        self.names = names
+#Randomiser for runes, uses the parent class to make it easier to make more randomisers in the future, and to make it easier to change the randomiser if needed.
+class runerandomiser(randomiserparent):
+    def __init__(self):
+        super().__init__(randomiser=self)
+        self.names = list(rune_map.keys())
+
+class runetree:
+    def __init__(self, tree_name):
+        self.tree = rune_map[tree_name]
+
+    def primary(self):
+        return {
+            "Keystone": random.choice(self.tree["main"]),
+            "Sub1": random.choice(self.tree["sub1"]),
+            "Sub2": random.choice(self.tree["sub2"]),
+            "Sub3": random.choice(self.tree["sub3"]),
+        }
+
+    def secondary(self):
+        # Pick 2 different sub slots
+        slots = random.sample(["sub1", "sub2", "sub3"], 2)
+
+        return {
+            slots[0]: random.choice(self.tree[slots[0]]),
+            slots[1]: random.choice(self.tree[slots[1]]),
+        }
+    
+class lanerandomiser(randomiserparent):
+    def __init__(self):
+        super().__init__(randomiser=self)
+        self.names = ("Top","Jungle","Mid","ADC","Support")
+
+def generate_build():
+
+    champion = championrandomiser().randomise()
+
+    primary_tree, secondary_tree = random.sample(
+    list(rune_map.keys()),
+    2
+)
+
+    output = f"""
+Champion: {champion}
+
+Primary: {primary_tree}
+Runes: {runetree(primary_tree).primary()}
+
+Secondary: {secondary_tree}
+Runes: {runetree(secondary_tree).secondary()}
+"""
+
+    result.config(text=output)
+
+root = tk.Tk()
+root.title("League Build Generator")
+
+title = tk.Label(
+    root,
+    text="League Build Generator",
+    font=("Arial", 16)
+)
+title.pack()
+
+generate_button = tk.Button(
+    root,
+    text="Generate Build",
+    command=generate_build
+)
+generate_button.pack()
+
+result = tk.Label(
+    root,
+    text="Press Generate",
+    justify="left"
+)
+result.pack()
+
+root.mainloop()
